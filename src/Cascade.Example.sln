@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.BuildContex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.Api", ".\Cascade.Example.Api\Cascade.Example.Api.csproj", "{D2DC30BD-CB82-4A20-BFE6-1F38C72F76A7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.BuildContext.Schema", "Cascade.Example.BuildContext.Schema\Cascade.Example.BuildContext.Schema.csproj", "{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{D2DC30BD-CB82-4A20-BFE6-1F38C72F76A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2DC30BD-CB82-4A20-BFE6-1F38C72F76A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2DC30BD-CB82-4A20-BFE6-1F38C72F76A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

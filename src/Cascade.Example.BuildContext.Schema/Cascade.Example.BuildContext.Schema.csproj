@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Cascade.Example.BuildContext.Schema</AssemblyName>
+    <RootNamespace>Cascade.Example.BuildContext.Schema</RootNamespace>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CascadeEsdm.SharedKernel.Abstractions" Version="1.0.0-alpha.60" />
+  </ItemGroup>
+
+</Project>
