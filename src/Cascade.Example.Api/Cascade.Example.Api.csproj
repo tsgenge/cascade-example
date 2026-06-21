@@ -80,8 +80,17 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\" />
+      <ProjectReference Include="..\Cascade.Example.BuildContext\Cascade.Example.BuildContext.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Folder Include="Models\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="CascadeEsdm.Storage.Azure" Version="1.0.81-alpha" />
+      <PackageReference Include="CascadeEsdm.Storage.CosmosDb" Version="1.0.81-alpha" />
+      <PackageReference Include="CascadeEsdm.WriteModel" Version="1.0.81-alpha" />
     </ItemGroup>
 
 </Project>

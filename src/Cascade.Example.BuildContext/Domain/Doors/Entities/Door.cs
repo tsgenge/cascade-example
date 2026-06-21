@@ -4,11 +4,11 @@ namespace Cascade.Example.BuildContext.Domain.Doors.Entities;
 
 public class Door
 {
-    public DoorId Id { get; init; }
-    public DoorName Name { get; init; }
-    public bool IsOpen { get; init; }
+    public DoorId Id { get; set; }
+    public DoorName Name { get; set; }
+    public bool IsOpen { get; set; }
 
-    public bool Exists => Id == DoorId.Empty;
+    public bool Exists => Id != DoorId.Empty;
 
     public static Door Empty => new Door
     {

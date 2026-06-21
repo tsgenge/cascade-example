@@ -9,27 +9,34 @@ using CascadeEsdm.WriteModel.Exceptions;
 
 namespace Cascade.Example.BuildContext.Domain.Doors.Commands;
 
-public record OpenDoor(DoorId DoorId) : ICommand
+public record RenameDoor(DoorId DoorId, DoorName Name) : ICommand
 {
     public Subject GetSubject(ICommandEnvelope envelope) =>
         Subject.ForAggregate<DoorAggregate>(DoorId.Value);
 }
 
-internal class OpenDoorExecutor : ICommandExecutor<OpenDoor, DoorAggregate>
+internal class RenameDoorExecutor : ICommandExecutor<RenameDoor, DoorAggregate>
 {
     public async IAsyncEnumerable<EventEnvelope> ExecuteAsync(
-        ICommandEnvelope<OpenDoor> envelope, DoorAggregate aggregate)
+        ICommandEnvelope<RenameDoor> envelope, DoorAggregate aggregate)
     {
         if (!aggregate.Door.Exists)
             throw new NotFoundException("Door not found");
 
-        if (!aggregate.Door.IsOpen)
-            yield return envelope.CreateEvent(new DoorOpened(), aggregate);
+        if (aggregate.Door.Name == envelope.Command.Name)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        yield return envelope.CreateEvent(
+            new DoorRenamed(envelope.Command.Name.Value),
+            aggregate);
 
         await Task.CompletedTask;
     }
 
     public Task<ISecurityDescriptor?> GetSecurityDescriptorAsync(
-        ICommandEnvelope<OpenDoor> envelope, DoorAggregate aggregate) =>
+        ICommandEnvelope<RenameDoor> envelope, DoorAggregate aggregate) =>
         Task.FromResult<ISecurityDescriptor?>(null);
 }

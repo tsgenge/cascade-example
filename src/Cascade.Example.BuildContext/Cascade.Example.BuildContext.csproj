@@ -7,8 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CascadeEsdm.AIContext" Version="1.0.62" />
-      <PackageReference Include="CascadeEsdm.WriteModel.Abstractions" Version="1.0.62" />
+      <PackageReference Include="CascadeEsdm.AIContext" Version="1.0.81-alpha" />
+      <PackageReference Include="CascadeEsdm.WriteModel.Abstractions" Version="1.0.81-alpha" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Domain\Doors\Commands\" />
     </ItemGroup>
 
 </Project>

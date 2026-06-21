@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CascadeEsdm.SharedKernel.Abstractions" Version="1.0.0-alpha.60" />
+    <PackageReference Include="CascadeEsdm.SharedKernel.Abstractions" Version="1.0.73" />
   </ItemGroup>
 
 </Project>

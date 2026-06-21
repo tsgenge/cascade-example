@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.Api", ".\Ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.BuildContext.Schema", "Cascade.Example.BuildContext.Schema\Cascade.Example.BuildContext.Schema.csproj", "{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cascade.Example.UnitTests", "..\tests\Cascade.Example.UnitTests\Cascade.Example.UnitTests.csproj", "{4DDA8662-2409-4841-BA12-7256EFF61A7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8920ECBB-0F81-4766-968F-2E61AB1DE1C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DDA8662-2409-4841-BA12-7256EFF61A7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DDA8662-2409-4841-BA12-7256EFF61A7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DDA8662-2409-4841-BA12-7256EFF61A7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DDA8662-2409-4841-BA12-7256EFF61A7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

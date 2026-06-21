@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Cascade.Example.UnitTests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Cascade.Example.Api\Cascade.Example.Api.csproj" />
+      <ProjectReference Include="..\..\src\Cascade.Example.BuildContext\Cascade.Example.BuildContext.csproj" />
+      <ProjectReference Include="..\..\src\Cascade.Example.BuildContext.Schema\Cascade.Example.BuildContext.Schema.csproj" />
+    </ItemGroup>
+
+</Project>
