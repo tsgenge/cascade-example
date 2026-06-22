@@ -1,14 +1,11 @@
+using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 using Cascade.Example.BuildContext.Domain;
-using Cascade.Example.BuildContext.Domain.Doors.Commands;
-using Cascade.Example.BuildContext.Domain.Doors.Events;
-using CascadeEsdm.WriteModel.Composition;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.Azurite;
 using Testcontainers.CosmosDb;
 using Testcontainers.ServiceBus;
@@ -55,42 +52,19 @@ public class ApiContext : IAsyncLifetime
 
         await SetupAzurite(AzuriteConnectionString);
         await SetupCosmos(CosmosConnectionString);
+        
+        System.Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        System.Environment.SetEnvironmentVariable("ConnectionStrings__CosmosDb", CosmosConnectionString);
+        System.Environment.SetEnvironmentVariable("ConnectionStrings__AzureStorage", AzuriteConnectionString);
+        System.Environment.SetEnvironmentVariable("ConnectionStrings__ServiceBus", ServiceBusConnectionString);
 
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
-                builder.ConfigureAppConfiguration((_, config) =>
-                {
-                    config.AddInMemoryCollection(new Dictionary<string, string?>
-                    {
-                        ["ConnectionStrings:CosmosDb"] = CosmosConnectionString,
-                        ["ConnectionStrings:AzureStorage"] = AzuriteConnectionString,
-                        ["ConnectionStrings:ServiceBus"] = ServiceBusConnectionString,
-                    });
-                });
-
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddCascadeEsdm(c =>
-                        c.WithInfrastructure(i =>
-                            i
-                                .UsingCosmosDbStorage(s => s
-                                    .WithConnectionString(CosmosConnectionString)
-                                    .WithOptions(CreateEmulatorClientOptions())
-                                    .WithDatabaseName("cascade")
-                                    .WithEventStreamContainer<EventStreamContainer>()
-                                )
-                                .UsingAzureTableStorage(s => s
-                                    .WithConnectionString(AzuriteConnectionString)
-                                )
-                        )
-                        .WithWriteModel(w =>
-                            w
-                                .UsingExecutors(x =>
-                                    x.AddCommandsFromAssembly<AddDoor>())
-                                .UsingAppliers(x =>
-                                    x.AddEventAppliersFromAssembly<DoorAdded>()))
-                    );
+                    services.RemoveAll(typeof(CosmosClientOptions));
+                    services.AddSingleton(CreateEmulatorClientOptions());
                 });
             });
 
@@ -152,5 +126,7 @@ public class ApiContext : IAsyncLifetime
     {
         var blobServiceClient = new BlobServiceClient(connectionString);
         await blobServiceClient.CreateBlobContainerAsync("distributed-locks");
+        var tabletServiceClient = new TableServiceClient(connectionString);
+        await tabletServiceClient.CreateTableAsync("sequences");
     }
 }

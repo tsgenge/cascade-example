@@ -37,20 +37,20 @@ Register Cascade in your DI host using the fluent builder. All three infrastruct
 ```csharp
 services.AddCascadeEsdm(cascade => cascade
     .WithInfrastructure(infra => infra
-        .UseCosmosDbStorage(storage => storage
+        .UsingCosmosDbStorage(storage => storage
             .WithConnectionString(connectionString)
             .WithDatabaseName("cascade")
             .WithEventStreamContainer<EventStreamContainer>())
-        .UseAzureDistributedLocks(locks => locks
+        .UsingAzureDistributedLocks(locks => locks
             .WithConnectionString(azuriteConnectionString))
-        .UseApplicationInsights())
+        .UsingApplicationInsights())
     .WithWriteModel(write => write
-        .WithExecutors(executors => executors
-            .AddCommandExecutor<AddPerson, AddPersonExecutor, PersonAggregate>()
-            .AddCommandExecutor<ChangePersonFirstName, ChangePersonFirstNameExecutor, PersonAggregate>())
-        .WithAppliers(appliers => appliers
-            .AddEventApplier<PersonAdded, PersonAddedApplier, PersonAggregate>()
-            .AddEventApplier<PersonFirstNameChanged, PersonFirstNameChangedApplier, PersonAggregate>())
+        .UsingExecutors(executors => executors
+            .AddCommandExecutor<AddPersonExecutor>()
+            .AddCommandExecutor<ChangePersonFirstNameExecutor>())
+        .UsingAppliers(appliers => appliers
+            .AddEventApplier<PersonAddedApplier>()
+            .AddEventApplier<PersonFirstNameChangedApplier>())
         .WithPolicies(policies => policies
             .AddPolicy<SendWelcomeEmailPolicy>())));
 ```
@@ -69,7 +69,7 @@ The infrastructure builder requires three components:
 #### Storage Configuration
 
 ```csharp
-infra.UseCosmosDbStorage(storage => storage
+infra.UsingCosmosDbStorage(storage => storage
     .WithConnectionString(connectionString)
     .WithDatabaseName("cascade")
     .WithEventStreamContainer<EventStreamContainer>())
@@ -93,7 +93,7 @@ public class EventStreamContainer : IDocumentContainerDefinition
 #### Distributed Locks Configuration
 
 ```csharp
-infra.UseAzureDistributedLocks(locks => locks
+infra.UsingAzureDistributedLocks(locks => locks
     .WithConnectionString(connectionString))
 ```
 
@@ -102,7 +102,7 @@ infra.UseAzureDistributedLocks(locks => locks
 #### Telemetry Configuration
 
 ```csharp
-infra.UseApplicationInsights()
+infra.UsingApplicationInsights()
 ```
 
 Registers OpenTelemetry-based logging with Application Insights.
@@ -127,9 +127,9 @@ After infrastructure is configured, you can register the write model components.
 #### Register Command Executors
 
 ```csharp
-write.WithExecutors(executors => executors
-    .AddCommandExecutor<TCommand, TExecutor, TAggregate>()
-    .AddCommandExecutor<TCommand2, TExecutor2, TAggregate2>())
+write.UsingExecutors(executors => executors
+    .AddCommandExecutor<TExecutor>()
+    .AddCommandExecutor<TExecutor2>())
 ```
 
 This registers:
@@ -140,15 +140,31 @@ This registers:
 - Command handler decorators (logging, event writing, serialization)
 - The specified command executors
 
+| Method | Description |
+|---|---|
+| `AddCommandExecutor<TExecutor>()` | Registers a single executor; `TCommand` and `TAggregate` are inferred via reflection from the executor's `ICommandExecutor<,>` interface |
+| `AddCommandsFromAssembly<TExampleType>()` | Discovers and registers all commands and their executors in the assembly containing `TExampleType`; throws `MissingExecutorException` if any command has no matching executor |
+
+```csharp
+// Or register all commands in an assembly at once:
+write.UsingExecutors(executors => executors
+    .AddCommandsFromAssembly<OrderAggregate>())
+```
+
 #### Register Event Appliers
 
 ```csharp
-write.WithAppliers(appliers => appliers
-    .AddEventApplier<TEvent, TApplier, TAggregate>()
-    .AddEventApplier<TEvent2, TApplier2, TAggregate2>())
+write.UsingAppliers(appliers => appliers
+    .AddEventApplier<TApplier>()
+    .AddEventApplier<TApplier2>())
 ```
 
-Registers the specified event appliers for handling events during aggregate hydration.
+Registers the specified event appliers for handling events during aggregate hydration. `TEvent` and `TAggregate` are inferred via reflection from the applier's `IEventApplier<,>` interface.
+
+| Method | Description |
+|---|---|
+| `AddEventApplier<TApplier>()` | Registers a single applier; `TEvent` and `TAggregate` are inferred via reflection |
+| `AddEventAppliersFromAssembly<TExampleType>()` | Discovers and registers all `IEventApplier<,>` implementations in the assembly containing `TExampleType` |
 
 #### Register Policies
 
@@ -160,6 +176,27 @@ write.WithPolicies(policies => policies
 ```
 
 Registers reactive policies that execute in response to domain events. See the [Policies](#policies) section for implementation details.
+
+### Read Model Configuration
+
+```csharp
+cascade.WithReadModel(read => read
+    .WithViews(views => views
+        .AddView<OrderView, ViewsContainer>()))
+```
+
+Registers read model projections. `WithViews` requires a notification service to have been registered in `WithInfrastructure()` (e.g. via `UseSignalR`).
+
+| Method | Description |
+|---|---|
+| `AddView<TView, TContainer>()` | Registers a single view backed by the specified container |
+| `AddViewsFromAssembly<TExampleType>(getContainer)` | Discovers all `IView` implementations in the assembly and resolves each container via the provided delegate; throws if any view has no container resolved |
+
+```csharp
+// Or using assembly scanning:
+read.WithViews(views => views
+    .AddViewsFromAssembly<OrderView>(viewType => typeof(ViewsContainer)))
+```
 
 ### Validation
 
@@ -251,7 +288,7 @@ public record PlaceOrder(OrderId OrderId, string Reference) : ICommand
 ### Command Executor
 
 - Each command has a single `ICommandExecutor<TCommand, TAggregate>`, implemented in the **same file** as the command to ensure high topological cohesion.
-- `ExecuteAsync` yields `EventEnvelope` instances via `IAsyncEnumerable`.
+- `ExecuteAsync` yields `EventEnvelope` instances via `IAsyncEnumerable`. The method signature must always use the `async` keyword.
 - `GetSecurityDescriptorAsync` returns the security descriptor (or `null` if no auth required).
 - Commands should not directly change aggregate state — they emit events.
 - Use `await Task.CompletedTask` when no actual async work occurs.
@@ -286,9 +323,58 @@ internal class PlaceOrderExecutor : ICommandExecutor<PlaceOrder, OrderAggregate>
 }
 ```
 
+### Command Execution Recommendations
+
+Command executors should validate whether the aggregate exists before proceeding. The aggregate should expose a boolean property (e.g. `Exists`) for this purpose — throw `NotFoundException` if the aggregate is expected to exist but doesn't, or `ConflictException` if it exists but shouldn't.
+
+After validation, determine whether the command is a **No-Op** — a command that would not change the state of the aggregate (e.g. changing a property to its current value). In that case, the executor should complete without yielding any events.
+
 ### Concurrency Locking
 
 Apply `[CommandLock]` to a command to acquire a distributed lock before execution. The lock is scoped to the subject (aggregate-level) or to the subject + command type (command-level).
+
+### Execution of Commands
+
+Inject `ICommandHandler<TCommand>` via DI and call `HandleAsync`, passing a `CommandEnvelope<TCommand>`:
+
+```csharp
+using CascadeEsdm.SharedKernel.ValueObjects;
+using CascadeEsdm.WriteModel;
+using CascadeEsdm.WriteModel.CommandHandling;
+
+[ApiController]
+[Route("orders")]
+public class OrdersController : ControllerBase
+{
+    private readonly ICommandHandler<PlaceOrder> _handler;
+
+    public OrdersController(ICommandHandler<PlaceOrder> handler)
+    {
+        _handler = handler;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PlaceOrder(
+        [FromBody] PlaceOrder command)
+    {
+        await _handler.HandleAsync(new CommandEnvelope<PlaceOrder>(
+            command,
+            HttpContext.ToAuthenticatedContext(),
+            new ClientChannel("api")));
+
+        return Accepted();
+    }
+}
+```
+
+### Decorator Chain
+
+The registered `ICommandHandler<TCommand>` is decorated automatically. The chain (outermost first) is:
+
+1. `SerialisedCommandHandlerDecorator` — acquires the distributed lock (when `[CommandLock]` is present)
+2. `EventWritingCommandHandlerDecorator` — persists emitted events to the event stream (Transaction Outbox)
+3. `LoggingCommandHandlerDecorator` — structured logging via OpenTelemetry
+4. `CommandHandler` — hydrates the aggregate, runs the executor, verifies event metadata
 
 ---
 
@@ -296,7 +382,7 @@ Apply `[CommandLock]` to a command to acquire a distributed lock before executio
 
 ### Definition
 
-Command envelopes wrap commands with metadata required for processing. The framework provides `ICommandEnvelope` and `ICommandEnvelope<TCommand>` interfaces, with `CommandEnvelope` and `CommandEnvelope<TCommand>` implementations.
+Command envelopes wrap commands with metadata required for processing. The framework provides `ICommandEnvelope` and `ICommandEnvelope<TCommand>` interfaces, with `CommandEnvelope` and `CommandEnvelope<TCommand>` implementations. `ICommandEnvelope` (non-generic) is used for serialisation purposes and is marked as deprecated — prefer `ICommandEnvelope<TCommand>` in all executor implementations.
 
 ### Properties
 
@@ -324,6 +410,8 @@ The envelope automatically assigns:
 - A new `Guid` for `Id`
 - The current UTC time for `Time`
 - The command type name for `Type`
+
+For serialisation scenarios, a constructor accepting all properties is also available.
 
 ### Client Channel
 
@@ -414,28 +502,55 @@ The extension method automatically:
 
 - Implement `IEventApplier<TEvent, TAggregate>` in the **same file** as the event record. The applier mutates the aggregate directly using its public properties.
 - The `IEventApplier` should be implemented as an `internal class`.
-- When setting ValueObject properties of an entity during applier execution, use `new()` to reduce `using` statements:
+- Event appliers do not need to validate the event — it is a historical fact.
+- When setting ValueObject properties of an entity during applier execution, use `new()` to reduce `using` statements.
+- The `IEventApplier` does not need (and should not) change the `LastSequence` property of the aggregate.
+- Event appliers are registered in the composition root via `UsingAppliers`.
+- Event appliers should be **optimistic** in approach — since they are replaying historical events, they do not need to verify or validate using if statements.
 
 ```csharp
-aggregate.Person.FirstName = new(@event.FirstName);
+using CascadeEsdm.SharedKernel.Events;
+using CascadeEsdm.WriteModel.Hydration;
 
-// Rather than:
-aggregate.Person.FirstName = new FirstName(@event.FirstName);
+public record PersonFirstNameChanged(Guid PersonId, string FirstName) : IDomainEvent;
+
+internal class PersonFirstNameChangedApplier : IEventApplier<PersonFirstNameChanged, PersonAggregate>
+{
+    public void Apply(PersonAggregate aggregate, PersonFirstNameChanged @event, EventEnvelope envelope)
+    {
+        aggregate.Person.FirstName = new(@event.FirstName);
+    }
+}
 ```
 
-- The `IEventApplier` does not need (and should not) change the `LastSequence` property of the aggregate.
-- Event appliers are discovered and registered automatically in the Composition Root.
-- Event appliers should be **optimistic** in approach — since they are replaying historical events, they do not need to verify or validate using if statements. For example, this guard is unnecessary:
+The following guard is unnecessary — the event is a historical fact and optimistic application is correct:
 
 ```csharp
-// ❌ Unnecessary — the event is a historical fact, no need to check
+// ❌ Unnecessary
 if (aggregate.Person != null)
 {
     aggregate.Person.FirstName = new(@event.FirstName);
 }
 
-// ✅ Correct — optimistic application
+// ✅ Correct
 aggregate.Person.FirstName = new(@event.FirstName);
+```
+
+### Registration
+
+| Method | Description |
+|---|---|
+| `AddEventApplier<TApplier>()` | Registers a single applier; `TEvent` and `TAggregate` are inferred via reflection from the applier's `IEventApplier<,>` interface |
+| `AddEventAppliersFromAssembly<TExampleType>()` | Discovers and registers all `IEventApplier<,>` implementations in the assembly containing `TExampleType` |
+
+```csharp
+write.UsingAppliers(appliers => appliers
+    .AddEventApplier<OrderPlacedApplier>()
+    .AddEventApplier<OrderCancelledApplier>())
+
+// Or register all appliers in an assembly at once:
+write.UsingAppliers(appliers => appliers
+    .AddEventAppliersFromAssembly<OrderAggregate>())
 ```
 
 ### Aggregate Hydration Using Events
@@ -1257,6 +1372,6 @@ Just don't take the microservice route unless you really need to.
 
 ## Status
 
-Alpha — initial release Q2 2026. The core write model and infrastructure packages are stable. The event extractor is in active development.
+Beta — Q2 2026. The core write model and infrastructure packages are stable. The event extractor is in active development.
 
 Packages are available on [NuGet](https://www.nuget.org/packages?q=cascadeesdm).
