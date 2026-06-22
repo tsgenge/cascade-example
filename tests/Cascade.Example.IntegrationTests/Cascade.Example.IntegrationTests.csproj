@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Cascade.Example.IntegrationTests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Testcontainers.Azurite" Version="4.12.0" />
+        <PackageReference Include="Testcontainers.CosmosDb" Version="4.12.0" />
+        <PackageReference Include="Testcontainers.ServiceBus" Version="4.11.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Cascade.Example.Api\Cascade.Example.Api.csproj" />
+        <ProjectReference Include="..\..\src\Cascade.Example.BuildContext\Cascade.Example.BuildContext.csproj" />
+    </ItemGroup>
+
+</Project>
